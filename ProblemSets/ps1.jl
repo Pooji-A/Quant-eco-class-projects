@@ -46,3 +46,16 @@ my_factorial(5)
 my_factorial(7)
 
 
+function count_positives(arr)
+    counter = 0
+    for num in arr
+        if num > 0
+            counter += 1
+        end
+    end
+    return counter
+end
+
+count_positives([1, -3, 4, 7, -2, 0])
+count_positives([-5, -10, 0, 6]) 
+
