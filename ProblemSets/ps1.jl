@@ -75,7 +75,7 @@ plot_powers(2)
 
 
 function standard_deviation(x)
-    mu_hat = mean(x)
+    mu_hat = sum(x)/length(x)
     d = x.- mu_hat
     squared_d = d.^ 2
     variance = sum(squared_d)/(length(x) - 1)
