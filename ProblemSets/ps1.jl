@@ -59,3 +59,15 @@ end
 count_positives([1, -3, 4, 7, -2, 0])
 count_positives([-5, -10, 0, 6]) 
 
+
+
+function plot_powers(n)
+    plot(legend=true)
+    for i in 1:n
+        pow(x) = x^i
+        plot!(pow,-10:0.1:10)
+    end
+    plot!(legend=true)
+end    
+
+plot_powers(2)
