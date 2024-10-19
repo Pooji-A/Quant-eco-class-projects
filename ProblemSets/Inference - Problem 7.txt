@@ -4,12 +4,12 @@ a. CORRELATION B/W EDUCATION AND EARNINGS :
 The correlation value came out to be 0.386 , meaning education and earning have a direct relationship but is non- linear. 
 As education increases , earnings increase as well but not always. 
 This can also be observed in the scatter plot associated . A general upward trend can be seen but the points are very scattered and are not along a straight line , justifying the correlation value.
-The result supports the reality that several other factors do play role here such as field of study , degree level , location , experience.
+The result supports the reality that several other factors do play role in case of education affecting earnings such as field of study , degree level , location , experience.
 
 
 b. CORRELATION B/W HOURS WORKED AND EARNINGS :
-The scatter plot does not depict clearly that as hours increase , the earnings are increasing. This is not happening in a mojority of cases considered. 
-This indicates that though the relation is positive but it isnt strong. It can be observed that the earnings are varying heavily even though the hours worked are the same .
-This justifies the correlation value of 0.248 .Working more hours does not always translate to potential higher earnings. It is affected by various factors such as job role , industry , pay structures , experience etc.,
+The scatter plot does not depict clearly whether increased hours worked means the earnings are increasing. This is not happening in a majority of cases considered. 
+It indicates that though the relation is positive , it isnt strong. It can be observed that the earnings are varying heavily even though the hours worked are the same .
+This justifies the correlation value of 0.248 . Working more hours does not always translate to potential higher earnings. It is affected by various factors such as job role , industry , pay structures , experience etc.,
 
 
