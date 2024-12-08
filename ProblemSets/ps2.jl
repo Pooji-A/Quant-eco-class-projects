@@ -1,6 +1,6 @@
 # Problem 1: iterative solver for nonlinear equations
 
-using Plots, LinearAlgebra
+using Plots, LinearAlgebra , Roots
 
 function iterative_solver(f, x0, α; ε=1e-6, maxiter=1000)
     # store iterations
@@ -173,3 +173,79 @@ pretty_table(data;
     formatters = (ft_printf("%.0e", [1]), 
                     ft_printf("%.6f", [2,3]),
                     ft_printf("%.2e", [4,5])))
+
+                    
+# Problem 3 : Internal Rate of Return  (IRR)
+using Roots
+# NPV function
+function NPV(r,c)
+    return sum(c[t]/ (1+r)^t for t in 1:length(c))
+end
+
+# IRR solver
+function internal_rate(c)
+    f(r) = NPV(r,c)
+    root = find_zero(f,(0.0, 1.0))
+    return root 
+end
+
+# Example usage of the functions created 
+c = [-5.0, 0.0, 2.5, 5.0]
+irr = internal_rate(c)
+println("The internal rate of return (irr) is : ",irr)
+
+# Problem 4: CES Production Function
+
+using Plots
+using Optim
+
+# CES production function
+function production_function(x1, x2, α, σ)
+    return (α * x1^(σ - 1) / σ + (1 - α) * x2^(σ - 1) / σ)^(σ / (σ - 1))
+end
+
+# Contour plot for the production function
+function plot_production_function(α, σ)
+    x1_vals = LinRange(0.1, 10, 100)
+    x2_vals = LinRange(0.1, 10, 100)
+    Z = [production_function(x1, x2, α, σ) for x1 in x1_vals, x2 in x2_vals]
+    contour(x1_vals, x2_vals, Z, title="CES Production Function", xlabel="x1", ylabel="x2")
+    
+    # Save the plot for production function
+    savefig("CES_production_function.png")  
+end
+# Example usage for production function plot
+plot_production_function(0.5, 0.25)
+
+# Cost function and optimization
+function cost_function(w1, w2, y, α, σ)
+    # Define the objective function (cost function)
+    objective(x) = w1 * x[1] + w2 * x[2]  
+    
+    # Optimization using the COBYLA method (no need for gradient)
+    result = optimize(objective, [1.0, 1.0], LowerBound(0.1), UpperBound(10.0), method = :cobyla)
+    return result
+end
+
+# Plot demand and cost for different values of σ
+function plot_demand_and_cost(w1, w2, y, α, σ_vals)
+    plot_data = []
+    for σ in σ_vals
+        result = cost_function(w1, w2, y, α, σ)
+        println("Result for σ = ", σ, ": ", result)
+        push!(plot_data, result)
+    end
+    
+    # Plotting cost and demand for different σ values
+    σ_vals = [0.25, 1.0, 4.0]
+    demands = [result.minimizer[1] for result in plot_data]  
+    costs = [result.minimum for result in plot_data]  
+    plot(σ_vals, demands, label="Demand for Input 1", xlabel="σ", ylabel="Demand (x1)", title="Cost and Input Demand vs σ", linewidth=2)
+    plot!(σ_vals, costs, label="Cost", ylabel="Cost", linewidth=2)
+    
+    # Save the plot for demand and cost
+    savefig("cost_and_demand.png")  
+end
+
+# Example: plot cost and input demand for different values of σ
+plot_demand_and_cost(1.0, 1.0, 1.0, 0.5, [0.25, 1, 4])
