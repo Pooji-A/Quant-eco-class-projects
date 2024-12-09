@@ -196,56 +196,125 @@ println("The internal rate of return (irr) is : ",irr)
 
 # Problem 4: CES Production Function
 
-using Plots
-using Optim
+
+using Plots, NLopt
 
 # CES production function
 function production_function(x1, x2, α, σ)
-    return (α * x1^(σ - 1) / σ + (1 - α) * x2^(σ - 1) / σ)^(σ / (σ - 1))
+    if σ == 1
+        return x1^α * x2^(1-α)  # Cobb-Douglas case
+    else
+        return (α * x1^((σ-1)/σ) + (1-α) * x2^((σ-1)/σ))^(σ/(σ-1))
+    end
 end
 
-# Contour plot for the production function
-function plot_production_function(α, σ)
-    x1_vals = LinRange(0.1, 10, 100)
-    x2_vals = LinRange(0.1, 10, 100)
-    Z = [production_function(x1, x2, α, σ) for x1 in x1_vals, x2 in x2_vals]
-    contour(x1_vals, x2_vals, Z, title="CES Production Function", xlabel="x1", ylabel="x2")
-    
-    # Save the plot for production function
-    savefig("CES_production_function.png")  
-end
-# Example usage for production function plot
-plot_production_function(0.5, 0.25)
-
-# Cost function and optimization
-function cost_function(w1, w2, y, α, σ)
-    # Define the objective function (cost function)
-    objective(x) = w1 * x[1] + w2 * x[2]  
-    
-    # Optimization using the COBYLA method (no need for gradient)
-    result = optimize(objective, [1.0, 1.0], LowerBound(0.1), UpperBound(10.0), method = :cobyla)
-    return result
+# Part 1: Function to create contour plot
+function plot_production_function(α, σ, x1_range=0.1:0.1:10, x2_range=0.1:0.1:10)
+    Z = [production_function(x1, x2, α, σ) for x1 in x1_range, x2 in x2_range]
+    contour(x1_range, x2_range, Z, 
+           title="σ = $σ",
+           xlabel="x1",
+           ylabel="x2",
+           fill=true)
 end
 
-# Plot demand and cost for different values of σ
-function plot_demand_and_cost(w1, w2, y, α, σ_vals)
-    plot_data = []
-    for σ in σ_vals
-        result = cost_function(w1, w2, y, α, σ)
-        println("Result for σ = ", σ, ": ", result)
-        push!(plot_data, result)
+# Part 2: Create plot using the previous function
+α = 0.5
+x1_range = 0.1:0.1:100
+x2_range = 0.1:0.1:100
+
+p1 = plot_production_function(α, 0.25, x1_range, x2_range);
+p2 = plot_production_function(α, 1.0, x1_range, x2_range);
+p3 = plot_production_function(α, 4.0, x1_range, x2_range);
+
+plot(p1, p2, p3, layout=(1,3), size=(1000, 350), 
+margin=5Plots.mm,
+plot_title="CES Production Functions",
+plot_titlevspan=0.1)
+
+
+# Part 3: Cost minimization function
+function minimize_cost(α, σ, w1, w2, y)
+    function objective(x, gradx1)
+        if length(grad) > 0
+            grad[1] = w1
+            grad[2] = w2
+        end
+        return w1*x[1] + w2*x[2]
     end
     
-    # Plotting cost and demand for different σ values
-    σ_vals = [0.25, 1.0, 4.0]
-    demands = [result.minimizer[1] for result in plot_data]  
-    costs = [result.minimum for result in plot_data]  
-    plot(σ_vals, demands, label="Demand for Input 1", xlabel="σ", ylabel="Demand (x1)", title="Cost and Input Demand vs σ", linewidth=2)
-    plot!(σ_vals, costs, label="Cost", ylabel="Cost", linewidth=2)
+    function constraint(xx1, gradx1)
+        if length(grad) > 0
+            if σ == 1
+                grad[1] = α * x[1]^(α-1) * x[2]^(1-α)
+                grad[2] = (1-α) * x[1]^α * x[2]^(-α)
+            else
+                denom = x[1]^((σ-1)/σ) + (1-α) * x[2]^((σ-1)/σ)
+                grad[1] = α * ((σ-1)/σ) * x[1]^((σ-1)/σ-1)
+                grad[2] = (1-α) * ((σ-1)/σ) * x[2]^((σ-1)/σ-1)
+            end
+        end
+        return production_function(x[1], x[2], α, σ) - y
+    end
+
+    opt = Opt(:LD_SLSQP, 2)
+    opt.lower_bounds = [1e-6, 1e-6]
+    opt.upper_bounds = [100.0, 100.0]
+    opt.ftol_rel = 1e-6
+    opt.maxeval = 1000
     
-    # Save the plot for demand and cost
-    savefig("cost_and_demand.png")  
+    opt.min_objective = objective
+    equality_constraint!(opt, constraint)
+    
+    (minf, minx, ret) = optimize(opt, [1.0, 1.0])
+    return minf, minx
 end
 
-# Example: plot cost and input demand for different values of σ
-plot_demand_and_cost(1.0, 1.0, 1.0, 0.5, [0.25, 1, 4])
+# Part 4: Plot cost function and input demands
+α = 0.5
+w2 = 1.0
+y = 1.0
+w1_range = 0.1:0.1:5
+
+σ_values = [0.25, 1.0, 4.0]
+colors = [:blue, :red, :green]
+
+costs = zeros(length(w1_range), 3)
+x1_demands = zeros(length(w1_range), 3)
+x2_demands = zeros(length(w1_range), 3)
+
+
+for (j, σ) in enumerate(σ_values)
+    for (i, w1) in enumerate(w1_range)
+        try
+            cost, x = minimize_cost(α, σ, w1, w2, y)
+            costs[i,j] = cost
+            x1_demands[i,j] = x[1]
+            x2_demands[i,j] = x[2]
+        catch e
+            costs[i,j] = NaN
+            x1_demands[i,j] = NaN
+            x2_demands[i,j] = NaN
+        end
+    end
+end
+
+# Create  plot
+p1 = plot(title="Cost Function");
+p2 = plot(title="x1 Demand");
+p3 = plot(title="x2 Demand");
+
+for (j, σ) in enumerate(σ_values)
+    plot!(p1, w1_range, costs[:,j], label="σ=$σ", color=colors[j])
+    plot!(p2, w1_range, x1_demands[:,j], label="σ=$σ", color=colors[j])
+    plot!(p3, w1_range, x2_demands[:,j], label="σ=$σ", color=colors[j])
+end
+
+for p in [p1, p2, p3]
+    xlabel!(p, "w1")
+end
+
+plot(p1, p2, p3, layout=(1,3), size=(1200,400))
+
+
+
