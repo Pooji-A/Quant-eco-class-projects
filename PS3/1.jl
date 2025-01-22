@@ -11,8 +11,6 @@ struct OrchidParams
 end
 
 function solve_bellman_equation(params::OrchidParams)
-    
-    # prices with 0.1 increments
     prices = params.pmin:0.1:params.pmax
     price_prob = ones(length(prices)) / length(prices)
     
@@ -26,21 +24,18 @@ function solve_bellman_equation(params::OrchidParams)
     σ_approach = zeros(Bool, params.N + 1)
     σ_buy = zeros(Bool, params.N + 1, length(prices))
     
-    # Backward induction
     for n in params.N:-1:0
-        
-        # Terminal values
         vT[n+1] = -params.c * n - params.f * n
         
-        # Value of buying at each price
         for (p_idx, p) in enumerate(prices)
+            # Value of buying
             vB[n+1, p_idx] = params.X - p - params.c * n - params.f * n
         end
         
-        # Value of approaching another vendor
         if n < params.N
             EV_found = sum(max.(vB[n+2,:], vT[n+2]) .* price_prob)
             v_not_found = v[n+2]
+            # Value of approaching another vendor
             vA[n+1] = -params.f + params.q * EV_found + (1-params.q) * v_not_found
         end
         
@@ -62,25 +57,17 @@ function solve_bellman_equation(params::OrchidParams)
             return 0.0, 0.0
         end
         
-        # Probability of reaching this state
         p_reach = (1-params.q)^(n-1) * params.q
-        
-        # Probability of buying at each price
         p_buy_price = p_reach * price_prob .* σ_buy[n,:]
-        
-        # Total probability of buying at this n
         total_prob = sum(p_buy_price)
         
-        # Expected price conditional on buying
         exp_price = total_prob > 0 ? sum(p_buy_price .* prices) / total_prob : 0.0
         
         return total_prob, exp_price
     end
     
-    # Analyze price acceptance behavior over n
     price_acceptance_thresholds = fill(Inf, params.N + 1)
     for n in 1:params.N+1
-        # For each n, find the maximum acceptable price
         max_acceptable = -Inf
         for (p_idx, p) in enumerate(prices)
             if σ_buy[n, p_idx]
@@ -100,17 +87,15 @@ end
 params = OrchidParams(
     50.0,   # Maximum willingness to pay
     0.5,    # base cost
-    0.5,   # f is undefined in the problem, so I set it to 0.5
+    0.5,    # f is undefined in the problem, so I set it to 0.5
     0.15,   # q
     10.0,   # pmin
     100.0,  # pmax
     50      # N
 )
 
-# Get results
 v, σ_approach, σ_buy, prob_calc, price_thresholds = solve_bellman_equation(params)
 
-# Calculate total probability of buying and expected price
 total_prob = 0.0
 weighted_price_sum = 0.0
 weighted_n_sum = 0.0
@@ -122,12 +107,11 @@ for n in 1:params.N
     weighted_n_sum += n * prob
 end
 
-# Calculate final metrics
 prob_buy = total_prob
 exp_price = weighted_price_sum / total_prob
 exp_vendors = weighted_n_sum / total_prob
 
-# Analyze results
+# Results
 println("a) Probability of buying: ", round(prob_buy, digits=3))
 println("b) Expected price if bought: ", round(exp_price, digits=2))
 println("c) Expected number of vendors approached: ", round(exp_vendors, digits=2))

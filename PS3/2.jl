@@ -16,19 +16,16 @@ function create_job_search_model(;
 end
 
 function solve_VE(w, β, p, expected_VU)
-    # When p = 0, this should be w/(1-β)
     return (w + β*p*expected_VU)/(1 - β*(1-p))
 end
 
 # Bellman operator 
 function T_operator!(VU_new, VU, model)
     (; n, w_vals, ϕ, β, c, p) = model
-    
     expected_VU = sum(VU .* ϕ)
     
     for i in 1:n
         VE_w = solve_VE(w_vals[i], β, p, expected_VU)
-        # Chooses max value between employment and staying unemployed
         VU_new[i] = max(VE_w, c + β*expected_VU)
     end
 end
@@ -44,7 +41,7 @@ function solve_separation_model(model; tol=1e-8, maxiter=1000)
     
     while error > tol && iter < maxiter
         copyto!(VU_new, VU)
-        T_operator!(VU_new, VU, model) # Apply Bellman operator
+        T_operator!(VU_new, VU, model)
         error = maximum(abs.(VU_new - VU))
         copyto!(VU, VU_new)
         iter += 1
@@ -63,15 +60,13 @@ end
 model_class = create_job_search_model(p=0.0)
 w_star_class, q_class, dur_class, VE_class, VU_class = solve_separation_model(model_class)
 
-# Verify that VE(w) = w/(1-β) when p = 0
-w_test = model_class.w_vals[50]  # test with middle wage
+w_test = model_class.w_vals[50]
 VE_analytical = w_test/(1-model_class.β)
 VE_computed = VE_class[50]
 println("Test p=0 case:")
 println("VE analytical: ", VE_analytical)
 println("VE computed: ", VE_computed)
 
-# Create plots for different probabilities
 p_grid = 0.0:0.02:0.5
 results = []
 
@@ -81,12 +76,10 @@ for p in p_grid
     push!(results, res)
 end
 
-# Extract results
 w_stars = [r[1] for r in results]
 accept_probs = [r[2] for r in results]
 durations = [r[3] for r in results]
 
-# Create plots
 p1 = plot(p_grid, w_stars,
     label="Reservation Wage",
     xlabel="Probability of Losing Job (p)",
@@ -95,13 +88,13 @@ p1 = plot(p_grid, w_stars,
 
 p2 = plot(p_grid, accept_probs,
     label="Acceptance Probability",
-    xlabel="Separation Probability (p)",
+    xlabel="Probability of Losing Job (p)",
     ylabel="q",
     title="Job Acceptance Probability vs Probability of Losing Job")
 
 p3 = plot(p_grid, durations,
     label="Expected Duration",
-    xlabel="Separation Probability (p)",
+    xlabel="Probability of Losing Job (p)",
     ylabel="Periods",
     title="Expected Unemployment Duration vs Probability of Losing Job")
 
