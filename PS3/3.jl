@@ -4,34 +4,34 @@ using Plots, Parameters
 
 @with_kw struct NGMProblem
     
-    β = 0.95 # discount factor
-    α = 0.3 # production function parameter
-    δ = 0.05 # depreciation rate
-    γ = 2.0 # intertemporal elasticity of substitution (inverse)
+    β = 0.95 
+    α = 0.3 
+    δ = 0.05 
+    γ = 2.0 
 
-    f = k -> k^α # production function
-    u = γ == 1 ? c -> log(c) : c -> c ^ (1-γ) / (1-γ)   # utility function
-    k_star = ((β^(-1) - 1 + δ) / α) ^(1/(α-1)) # steady state capital
+    f = k -> k^α 
+    u = γ == 1 ? c -> log(c) : c -> c ^ (1-γ) / (1-γ)   
+    k_star = ((β^(-1) - 1 + δ) / α) ^(1/(α-1)) 
 
-    k_min = 0.75 * k_star # minimum capital
-    k_max = 1.25 * k_star # maximum capital
+    k_min = 0.75 * k_star 
+    k_max = 1.25 * k_star 
     
-    n = 100 # number of grid points
-    k_grid = range(k_min,stop=k_max,length=n) # grid for capital
+    n = 100 
+    k_grid = range(k_min,stop=k_max,length=n) 
     
 end
 
-function T(v, model) # Bellman operator
+function T(v, model) 
     @unpack n, k_grid, β, α, δ, f, u = model
 
     v_new = zeros(n)
     reward = zeros(n, n)
     σ = zeros(n)
 
-    for (k_index, k) in enumerate(k_grid) # loop over capital today
-        for (k_next_index, k_next) in enumerate(k_grid) # loop over future capital
+    for (k_index, k) in enumerate(k_grid) 
+        for (k_next_index, k_next) in enumerate(k_grid) 
 
-            c = k^α - k_next + (1-δ)*k # consumption
+            c = k^α - k_next + (1-δ)*k 
             if c > 0
                 reward[k_index, k_next_index] = u(c) + β * v[k_next_index]
             else
